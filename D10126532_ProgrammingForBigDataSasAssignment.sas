@@ -8,56 +8,61 @@
 /* Define library location */
 * LIBNAME atlib "C:\SASData\johnwarde\SASAssignment";
 
-/* Import Customer Billing Records data */
+/* Import Customer Billing Records data 
+
+   Name             Type     Description
+   ID               Numeric  Customer ID
+   date             Numeric  The date of the bill (MMM-yyyy)
+   recurringCharge  Numeric  The recurring bundle charge this month
+   callCharges      Numeric  The call charges for this month
+   totalBill        Numeric  The total bill amount for this month
+   minutes          Numeric  The number of minutes used this month
+   overageMins      Numeric  The number of minutes over the customer's bundle used this month
+*/
+
+/*
 data atlib.bills_small;
 	infile 'U:\ProgrammingForBigData\SasAssignment\bills-small.csv' dlm=',' dsd firstobs=2;
-/*
- * Name             Type     Description
- * ID               Numeric  Customer ID
- * date             Numeric  The date of the bill (MMM-yyyy)
- * recurringCharge  Numeric  The recurring bundle charge this month
- * callCharges      Numeric  The call charges for this month
- * totalBill        Numeric  The total bill amount for this month
- * minutes          Numeric  The number of minutes used this month
- * overageMins      Numeric  The number of minutes over the customer's bundle used this month
-*/
     informat date MONYY7.;
 	input ID date $ recurringCharge callCharges totalBill minutes overageMins;
-	/* TODO: attempt to get Jan-2011 output format for below */ 
+	* TODO: attempt to get Jan-2011 output format for below;
 	format date MMYYD8.;
 run;
 
 
 proc print data=atlib.bills_small;
 run;
-
-
-
-/*
-
-
-
-Name             Type     Description
-customerID        Numeric  customerID
-callDate          Numeric  The date and time of the call
-length            Numeric  The length of the call in minutes
-number            Numeric  The number called
-outcome           Numeric  The outcome of the call {blocked, unanswered, complete, dropped}
-roaming           Numeric  Was this call a roaming {true, false}
-directorAssisted  Numeric  Was this a directory assisted call {true, false}
-peakOrOffPeak     Numeric  Was this call on peak {true, false}
-
-
-customerID callDate length number outcome roaming directorAssisted peakOrOffPeak
-
-
 */
 
 
+
+/* Import Customer Call Records data 
+
+   Name              Type     Description
+   customerID        Numeric  customerID
+   callDate          Numeric  The date and time of the call
+   length            Numeric  The length of the call in minutes
+   number            Numeric  The number called
+   outcome           Numeric  The outcome of the call {blocked, unanswered, complete, dropped}
+   roaming           Numeric  Was this call a roaming {true, false}
+   directorAssisted  Numeric  Was this a directory assisted call {true, false}
+   peakOrOffPeak     Numeric  Was this call on peak {true, false}
+
+*/
+data atlib.calls_small;
+	infile 'U:\ProgrammingForBigData\SasAssignment\calls-small.csv' dlm=',' dsd firstobs=2;
+    informat callDate datetime.;
+	input customerID callDate $ length number outcome $ roaming $ directorAssisted $ peakOrOffPeak $;
+	format callDate e8601dt.;
+run;
+
+
+proc print data=atlib.calls_small;
+run;
+
+
+
 /*
-
-
-
 
 callSummaries.csv
 
