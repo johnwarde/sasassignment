@@ -6,21 +6,20 @@
  */
 
 /* Define library location */
-LIBNAME alib "C:\SASData\johnwarde\SASAssignment";
+* LIBNAME atlib "C:\SASData\johnwarde\SASAssignment";
 
 /* Import Customer Billing Records data */
-
-data alib.bills_small;
-	infile 'U:\ProrammingForBigData\SasAssignment\bills_small.csv' dlm=',' dsd firstobs=2;
+data atlib.bills_small;
+	infile 'U:\ProgrammingForBigData\SasAssignment\bills-small.csv' dlm=',' dsd firstobs=2;
 /*
-Name             Type     Description
-ID               Numeric  Customer ID
-date             Numeric  The date of the bill (MMM-yyyy)
-recurringCharge  Numeric  The recurring bundle charge this month
-callCharges      Numeric  The call charges for this month
-totalBill        Numeric  The total bill amount for this month
-minutes          Numeric  The number of minutes used this month
-overageMins      Numeric  The number of minutes over the customer's bundle used this month
+ * Name             Type     Description
+ * ID               Numeric  Customer ID
+ * date             Numeric  The date of the bill (MMM-yyyy)
+ * recurringCharge  Numeric  The recurring bundle charge this month
+ * callCharges      Numeric  The call charges for this month
+ * totalBill        Numeric  The total bill amount for this month
+ * minutes          Numeric  The number of minutes used this month
+ * overageMins      Numeric  The number of minutes over the customer's bundle used this month
 */
     informat date MONYY7.;
 	input ID date $ recurringCharge callCharges totalBill minutes overageMins;
@@ -29,7 +28,7 @@ overageMins      Numeric  The number of minutes over the customer's bundle used 
 run;
 
 
-proc print data=alib.bills_small;
+proc print data=atlib.bills_small;
 run;
 
 
