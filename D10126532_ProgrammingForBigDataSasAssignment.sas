@@ -6,9 +6,10 @@
  */
 
 /* Define library location */
-*LIBNAME atlib "C:\SASData\johnwarde\SASAssignment";
+LIBNAME atlib "C:\SASData\johnwarde\SASAssignment";
 
-/* Import Customer Billing Records data 
+/* 
+   Import Customer Billing Records data 
 
    Name             Type     Description
    ID               Numeric  Customer ID
@@ -20,7 +21,7 @@
    overageMins      Numeric  The number of minutes over the customer's bundle used this month
 */
 
-/*
+
 data atlib.bills_small;
 	infile 'U:\ProgrammingForBigData\SasAssignment\bills-small.csv' dlm=',' dsd firstobs=2;
     informat date MONYY7.;
@@ -32,11 +33,12 @@ run;
 
 proc print data=atlib.bills_small;
 run;
-*/
 
 
 
-/* Import Customer Call Records data 
+
+/* 
+   Import Customer Call Records data 
 
    Name              Type     Description
    customerID        Numeric  customerID
@@ -64,7 +66,7 @@ run;
 
 /*
 
-callSummaries.csv
+Import Call Summaries Data
 
 Name               Type     Description
 customer           Numeric  Customer ID
@@ -95,4 +97,85 @@ run;
 
 proc print data=atlib.callSummaries_small;
 run;
+
+/*
+	Import Customer Demographics
+
+
+Name Type Description  
+
+customer 			Numeric The customer number 
+age 				Numeric The customer's age 
+occupation 			Categorical The occupation of the customer {clerical, crafts, homemaker, professional, retired, self-­-employed, student} 
+serviceArea 		Categorical The cell-­-phone service area in which the customer lives 
+regionType 			Categorical The type of region in which the customer lives {rural, suburban, town} 
+marital 			Categorical The customer's marital status {yes, no, unknown} 
+children 			Categorical There are children present in the customer's household {true, false} 
+income 				Numeric The customer's income {0 -­- 9} 
+months 				Numeric The number of months the customer has been in service 
+numPhones 			Numeric The number of phones the customer has owned 
+numModels 			Numeric The number of different phone models the customer has owned 
+currentEquipDays 	Numeric The number of days that the customer has owned their current handset 
+WebCapable 			Categorical The customer's handset is web capable {true, false} 
+handsetPrice 		Numeric The price paid for the customer's handset 
+creditRating 		Categorical The customers credit rating {a, aa, b, c, de, gy, z} 
+creditAdjust 		Numeric The number of times the customer's credit rating has been adjusted (either up or down) since they became a customer 
+truck 				Categorical The customer owns a truck 
+rv 					Categorical The customer owns a recreational vehicle {true, false} 
+motorcycle 			Categorical The customer owns a motorcycle {true, false} 
+pc 					Categorical The customer owns a personal computer {true, false} 
+ownHome 			Categorical The customer owns their own home {true, false} 
+mailOrder 			Categorical The customer buys via mail order {true, false} 
+mailResponder 		Categorical The customer responds to mail offers {true, false} 
+mailFlag 			Categorical The customer has chosen not to be solicited by mail {true, false} 
+travel 				Categorical The customer has travelled internationally {true, false} 
+creditCard 			Categorical The customer owns a credit card {true, false} 
+newCellUser 		Categorical The customer is a known new cell phone user {yes, no, unknown} 
+numReferrals 		Numeric The number of referrals made by the customer 
+
+
+1000004, 26, crafts, MILMIL414, town, yes, true, 6.0, 60, 1, 1, 1812, false, 0.0, b, 0, 
+false, false, false, false, true, false, false, false, false, true, yes, 0
+
+*/
+data atlib.demographics_small;
+	infile 'U:\ProgrammingForBigData\SasAssignment\demographics-small.csv' dlm=',' dsd firstobs=2;
+	length occupation $ 14;
+	length serviceArea $ 14;
+	input 
+		customer 			/* Numeric The customer number */
+		age 				/* Numeric The customer's age */
+		occupation $		/* Categorical The occupation of the customer {clerical, crafts, homemaker, professional, retired, self-­-employed, student} */
+		serviceArea $		/* Categorical The cell-­-phone service area in which the customer lives */
+		regionType $		/* Categorical The type of region in which the customer lives {rural, suburban, town} */
+		marital $			/* Categorical The customer's marital status {yes, no, unknown} */
+		children $			/* Categorical There are children present in the customer's household {true, false} */
+		income 				/* Numeric The customer's income {0 -­- 9} */
+		months 				/* Numeric The number of months the customer has been in service */
+		numPhones 			/* Numeric The number of phones the customer has owned */
+		numModels 			/* Numeric The number of different phone models the customer has owned */
+		currentEquipDays 	/* Numeric The number of days that the customer has owned their current handset */
+		WebCapable $		/* Categorical The customer's handset is web capable {true, false} */
+		handsetPrice  		/* Numeric The price paid for the customer's handset */
+		creditRating $		/* Categorical The customers credit rating {a, aa, b, c, de, gy, z} */
+		creditAdjust 		/* Numeric The number of times the customer's credit rating has been adjusted (either up or down) since they became a customer */
+		truck $				/* Categorical The customer owns a truck */
+		rv $				/* Categorical The customer owns a recreational vehicle {true, false} */
+		motorcycle $		/* Categorical The customer owns a motorcycle {true, false} */
+		pc $				/* Categorical The customer owns a personal computer {true, false} */
+		ownHome $			/* Categorical The customer owns their own home {true, false} */
+		mailOrder $			/* Categorical The customer buys via mail order {true, false} */
+		mailResponder $		/* Categorical The customer responds to mail offers {true, false} */
+		mailFlag $			/* Categorical The customer has chosen not to be solicited by mail {true, false} */
+		travel $			/* Categorical The customer has travelled internationally {true, false} */
+		creditCard $		/* Categorical The customer owns a credit card {true, false} */
+		newCellUser $		/* Categorical The customer is a known new cell phone user {yes, no, unknown} */
+		numReferrals 		/* Numeric The number of referrals made by the customer */
+    ;
+run;
+
+
+proc print data=atlib.demographics_small;
+run;
+
 
