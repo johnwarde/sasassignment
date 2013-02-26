@@ -6,7 +6,7 @@
  */
 
 /* Define library location */
-* LIBNAME atlib "C:\SASData\johnwarde\SASAssignment";
+*LIBNAME atlib "C:\SASData\johnwarde\SASAssignment";
 
 /* Import Customer Billing Records data 
 
@@ -67,17 +67,32 @@ run;
 callSummaries.csv
 
 Name               Type     Description
-callsBlocked       Numeric  The number of blocked calls in the billing period
-callsCustCare      Numeric  The number of calls made to customer care in this period
-callsDirectAssist  Numeric  The number of directory assisted calls made in this period
-callsDropped       Numeric  The number of calls dropped in this period
-callsOffPeak       Numeric  The total number of off peak calls made in this period
-callsPeak          Numeric  The total number of peak calls made in this period
-callsRoam          Numeric  The number of roaming calls made in this period
-callsTotal         Numeric  The total number of calls made in this period
-callsUnanswered    Numeric  The number of unanswered calls made in this period
 customer           Numeric  Customer ID
 recordDate         Numeric  The date of the bill (MMM-yyyy)
+callsDropped       Numeric  The number of calls dropped in this period
+callsBlocked       Numeric  The number of blocked calls in the billing period
+callsUnanswered    Numeric  The number of unanswered calls made in this period
+callsCustCare      Numeric  The number of calls made to customer care in this period
+callsDirectAssist  Numeric  The number of directory assisted calls made in this period
+callsRoam          Numeric  The number of roaming calls made in this period
+callsPeak          Numeric  The total number of peak calls made in this period
+callsOffPeak       Numeric  The total number of off peak calls made in this period
+callsTotal         Numeric  The total number of calls made in this period
 totalMinutes       Numeric  The total number of minutes used in this period
 
+customer, recordDate, callsDropped, callsBlocked, callsUnanswered, callsCustCare, callsDirectAssist, callsRoam, callsPea
+k, callsOffPeak, callsTotal, totalMinutes
+1000004, Jan-2011, 0, 0, 0, 0, 0, 0, 1, 4, 5, 7.3825136479466
+
 */
+data atlib.callSummaries_small;
+	infile 'U:\ProgrammingForBigData\SasAssignment\callSummaries-small.csv' dlm=',' dsd firstobs=2;
+    informat recordDate MONYY7.;
+	input customer recordDate $ callsDropped callsBlocked callsUnanswered callsCustCare callsDirectAssist callsRoam callsPeak callsOffPeak callsTotal totalMinutes;
+	format recordDate MMYYD8.;
+run;
+
+
+proc print data=atlib.callSummaries_small;
+run;
+
