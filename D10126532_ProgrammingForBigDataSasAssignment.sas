@@ -15,8 +15,8 @@ LIBNAME atlib "C:\SASData\johnwarde\SASAssignment";
 1000004, Jan-2011, 38.00, 0.00, 38.00, 7.3825136479466, 0.0
 
 */
-data atlib.bills_small;
-    infile 'U:\ProgrammingForBigData\SasAssignment\bills-small.csv' dlm=',' dsd firstobs=2;
+data atlib.bills;
+    infile 'U:\ProgrammingForBigData\SasAssignment\bills.csv' dlm=',' dsd firstobs=2;
     informat date MONYY7.;
     input 
         ID               /* Numeric  Customer ID */
@@ -32,7 +32,7 @@ data atlib.bills_small;
 run;
 
 
-proc print data=atlib.bills_small;
+proc print data=atlib.bills;
 run;
 
 
@@ -45,8 +45,8 @@ run;
 1000004, 25Jan11:00:41:12, 1.281945212974323, 0884469412, complete, false, false, true
 
 */
-data atlib.calls_small;
-    infile 'U:\ProgrammingForBigData\SasAssignment\calls-small.csv' dlm=',' dsd firstobs=2;
+data atlib.calls;
+    infile 'U:\ProgrammingForBigData\SasAssignment\calls.csv' dlm=',' dsd firstobs=2;
     informat callDate datetime.;
     input 
         customerID          /* Numeric  customerID */
@@ -62,7 +62,7 @@ data atlib.calls_small;
 run;
 
 
-proc print data=atlib.calls_small;
+proc print data=atlib.calls;
 run;
 
 
@@ -75,8 +75,8 @@ run;
 1000004, Jan-2011, 0, 0, 0, 0, 0, 0, 1, 4, 5, 7.3825136479466
 
 */
-data atlib.callSummaries_small;
-    infile 'U:\ProgrammingForBigData\SasAssignment\callSummaries-small.csv' dlm=',' dsd firstobs=2;
+data atlib.callSummaries;
+    infile 'U:\ProgrammingForBigData\SasAssignment\callSummaries.csv' dlm=',' dsd firstobs=2;
     informat recordDate MONYY7.;
     input 
         customer           /* Numeric  Customer ID */
@@ -96,7 +96,7 @@ data atlib.callSummaries_small;
 run;
 
 
-proc print data=atlib.callSummaries_small;
+proc print data=atlib.callSummaries;
 run;
 
 /*
@@ -107,8 +107,8 @@ Sample Data
 false, false, false, false, true, false, false, false, false, true, yes, 0
 
 */
-data atlib.demographics_small;
-    infile 'U:\ProgrammingForBigData\SasAssignment\demographics-small.csv' dlm=',' dsd firstobs=2;
+data atlib.demographics;
+    infile 'U:\ProgrammingForBigData\SasAssignment\demographics.csv' dlm=',' dsd firstobs=2;
     length occupation $ 14;
     length serviceArea $ 14;
     input 
@@ -144,7 +144,7 @@ data atlib.demographics_small;
 run;
 
 
-proc print data=atlib.demographics_small;
+proc print data=atlib.demographics;
 run;
 
 
@@ -182,5 +182,73 @@ run;
 28. revenueChange       % change in revenues in last two months
 29. roam                Mean number of roaming calls per month
 30. churn               A flag indicating whether the customer has churned {true, false}
+
+*/
+proc sort data=atlib.bills;
+ 	by ID date;
+Run;
+
+data bills_aggregate;
+    set atlib.bills;
+	by ID;
+	keep
+		ID					/* customer ID */
+		bill_counter
+		overage				/* Mean out of bundle minutes of use */
+		overageMax			/* Max out of bundle minutes of use */
+		overageMin			/* Min out of bundle minutes of use */
+		recchrge			/* Mean total recurring charge */
+		revenue				/* Mean monthly revenue */
+		revenueTotal		/* The total revenue earned from this customer */
+		revenueChange		/* % change in revenues in last two months */
+	;
+	
+    retain bill_counter 0;
+
+	retain out_of_bundle_minutes_total 0;
+	retain recurring_charge_total 0;
+	retain overageMax 0;
+	retain overageMin 999999;
+    retain revenueTotal 0;
+	
+	if first.ID then 
+	do;
+		bill_counter = 0;	
+		out_of_bundle_minutes_total = 0;
+		recurring_charge_total = 0;
+		overageMax = 0;	
+		overageMin = 999999;	
+		revenueTotal = 0;	
+	end;
+	bill_counter = bill_counter + 1;
+	out_of_bundle_minutes_total = sum(out_of_bundle_minutes_total, overageMins);
+	recurring_charge_total = sum(recurring_charge_total, recurringCharge);
+	overageMax = max(overageMax, overageMins);
+	overageMin = min(overageMin, overageMins);
+	revenueTotal = sum(revenueTotal, totalBill);
+    if last.ID then
+	do;
+	    overage = out_of_bundle_minutes_total / bill_counter;
+		recchrge = recurring_charge_total / bill_counter;
+		revenue = revenueTotal / bill_counter;
+		output;
+	end;
+run;
+
+
+
+/*
+
+proc sort data = demographics;
+	by customer;
+run;
+
+
+data atlib.abt;
+	merge demographics
+	      bills_agg (rename (customer = ID));
+	      * bills_agg (rename (customer = ID bills_counter = counter)); 
+	by ID;
+run;
 
 */
