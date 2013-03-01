@@ -185,54 +185,53 @@ run;
 
 */
 proc sort data=atlib.bills;
- 	by ID date;
+    by ID date;
 Run;
 
 data bills_aggregate;
     set atlib.bills;
-	by ID;
-	keep
-		ID					/* customer ID */
-		bill_counter
-		overage				/* Mean out of bundle minutes of use */
-		overageMax			/* Max out of bundle minutes of use */
-		overageMin			/* Min out of bundle minutes of use */
-		recchrge			/* Mean total recurring charge */
-		revenue				/* Mean monthly revenue */
-		revenueTotal		/* The total revenue earned from this customer */
-		revenueChange		/* % change in revenues in last two months */
-	;
-	
+    by ID;
+    keep
+        ID                  /* customer ID */
+        overage             /* Mean out of bundle minutes of use */
+        overageMax          /* Max out of bundle minutes of use */
+        overageMin          /* Min out of bundle minutes of use */
+        recchrge            /* Mean total recurring charge */
+        revenue             /* Mean monthly revenue */
+        revenueTotal        /* The total revenue earned from this customer */
+        revenueChange       /* % change in revenues in last two months */
+    ;
+    
     retain bill_counter 0;
 
-	retain out_of_bundle_minutes_total 0;
-	retain recurring_charge_total 0;
-	retain overageMax 0;
-	retain overageMin 999999;
+    retain out_of_bundle_minutes_total 0;
+    retain recurring_charge_total 0;
+    retain overageMax 0;
+    retain overageMin 999999;
     retain revenueTotal 0;
-	
-	if first.ID then 
-	do;
-		bill_counter = 0;	
-		out_of_bundle_minutes_total = 0;
-		recurring_charge_total = 0;
-		overageMax = 0;	
-		overageMin = 999999;	
-		revenueTotal = 0;	
-	end;
-	bill_counter = bill_counter + 1;
-	out_of_bundle_minutes_total = sum(out_of_bundle_minutes_total, overageMins);
-	recurring_charge_total = sum(recurring_charge_total, recurringCharge);
-	overageMax = max(overageMax, overageMins);
-	overageMin = min(overageMin, overageMins);
-	revenueTotal = sum(revenueTotal, totalBill);
+    
+    if first.ID then 
+    do;
+        bill_counter = 0;   
+        out_of_bundle_minutes_total = 0;
+        recurring_charge_total = 0;
+        overageMax = 0; 
+        overageMin = 999999;    
+        revenueTotal = 0;   
+    end;
+    bill_counter = bill_counter + 1;
+    out_of_bundle_minutes_total = sum(out_of_bundle_minutes_total, overageMins);
+    recurring_charge_total = sum(recurring_charge_total, recurringCharge);
+    overageMax = max(overageMax, overageMins);
+    overageMin = min(overageMin, overageMins);
+    revenueTotal = sum(revenueTotal, totalBill);
     if last.ID then
-	do;
-	    overage = out_of_bundle_minutes_total / bill_counter;
-		recchrge = recurring_charge_total / bill_counter;
-		revenue = revenueTotal / bill_counter;
-		output;
-	end;
+    do;
+        overage = out_of_bundle_minutes_total / bill_counter;
+        recchrge = recurring_charge_total / bill_counter;
+        revenue = revenueTotal / bill_counter;
+        output;
+    end;
 run;
 
 
@@ -240,15 +239,15 @@ run;
 /*
 
 proc sort data = demographics;
-	by customer;
+    by customer;
 run;
 
 
 data atlib.abt;
-	merge demographics
-	      bills_agg (rename (customer = ID));
-	      * bills_agg (rename (customer = ID bills_counter = counter)); 
-	by ID;
+    merge demographics
+          bills_agg (rename (customer = ID));
+          * bills_agg (rename (customer = ID bills_counter = counter)); 
+    by ID;
 run;
 
 */
