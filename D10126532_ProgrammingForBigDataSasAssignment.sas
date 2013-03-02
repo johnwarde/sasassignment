@@ -230,6 +230,9 @@ data bills_aggregate;
         overage = out_of_bundle_minutes_total / bill_counter;
         recchrge = recurring_charge_total / bill_counter;
         revenue = revenueTotal / bill_counter;
+        /* TODO: getting a divide by zero on a lot but not all calculations */
+        if (lag1(totalBill) = . | lag1(totalBill) = 0) then revenueChange = 0;
+        else revenueChange = dif1(totalBill) / lag1(totalBill); 
         output;
     end;
 run;
