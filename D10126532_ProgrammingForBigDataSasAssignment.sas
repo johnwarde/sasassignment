@@ -230,12 +230,99 @@ data bills_aggregate;
         overage = out_of_bundle_minutes_total / bill_counter;
         recchrge = recurring_charge_total / bill_counter;
         revenue = revenueTotal / bill_counter;
-        /* TODO: getting a divide by zero on a lot but not all calculations */
-        if (lag1(totalBill) = . | lag1(totalBill) = 0) then revenueChange = 0;
-        else revenueChange = dif1(totalBill) / lag1(totalBill); 
+        last_bill_total = lag1(totalBill);
+        if (last_bill_total = . | last_bill_total = 0) then revenueChange = 0;
+        else revenueChange = dif1(totalBill) / last_bill_total; 
         output;
     end;
 run;
+
+proc sort data=atlib.callSummaries;
+    by customer recordDate;
+
+run;
+
+data callSummaries_aggregate;
+    set atlib.callSummaries;
+    by customer;
+    keep
+        customer            /* Customer ID */
+        custcare            /* Mean number of customer care calls per month */
+        custcareTotal       /* The total number of customer care calls made */
+        custcareLast        /* The number of customer care calls made last month */
+        directas            /* Mean number of directory assisted calls per month */
+        directasLast        /* Number of director assisted calls last month */
+        dropvce             /* Mean number of dropped voice calls per month */
+        dropvceLast         /* Number of dropped voice calls last month */
+        mou                 /* Mean monthly minutes of use */
+        mouTotal            /* Total minutes of use */
+        mouChange           /* % change in minutes of use in last two months */
+        outcalls            /* Mean number of outbound voice calls per month */
+        peakOffPeak         /* Ratio of peak to off-peak calls */
+        peakOffPeakLast     /* Ratio of peak to off-peak calls last month */
+        roam                /* Mean number of roaming calls per month */
+    ;
+    
+    retain bill_counter 0;
+
+    retain custcareTotal 0;
+    retain directasTotal 0;
+    retain dropvceTotal 0;
+    retain revenueTotal 0;
+    retain mouTotal 0;
+    retain callsOffPeakTotal 0;
+    retain callsPeakTotal 0;
+    retain outcallsTotal 0;
+    retain roamTotal 0;
+    
+    if first.customer then 
+    do;
+        bill_counter = 0;   
+        custcareTotal = 0;
+        directasTotal = 0;
+        dropvceTotal = 0; 
+        mouTotal = 0; 
+        callsOffPeakTotal = 0;
+        callsPeakTotal = 0;
+        outcallsTotal = 0;
+        roamTotal = 0; 
+    end;
+    bill_counter = bill_counter + 1;
+    custcareTotal = sum(custcareTotal, callsCustCare);
+    directasTotal = sum(directasTotal, callsDirectAssist);
+    dropvceTotal = sum(dropvceTotal, callsDropped);
+    mouTotal = sum(mouTotal, totalMinutes);
+    callsOffPeakTotal = sum(callsOffPeakTotal, callsOffPeak);
+    callsPeakTotal = sum(callsPeakTotal, callsOffPeak);
+    outcallsTotal = sum(outcallsTotal, callsTotal);
+    roamTotal = sum(roamTotal, callsRoam);
+
+    if last.customer then
+    do;
+        custcare = custcareTotal / bill_counter;
+        custcareLast = custcareTotal;
+        directas = directasTotal / bill_counter;
+        directasLast = callsDirectAssist;
+        dropvce = dropvceTotal / bill_counter;
+        dropvceLast = callsDropped;
+        mou = mouTotal / bill_counter;
+        previous_total_minutes = lag1(totalMinutes);
+        if (previous_total_minutes = . | previous_total_minutes = 0) then mouChange = 0;
+        else mouChange = dif1(totalMinutes) / previous_total_minutes; 
+        outcalls = outcallsTotal / bill_counter;
+        /* TODO: cater for division by zero in all cases where 
+                 dividing by a value from a dataset, i.e. when
+                 not dividing by a counter */
+        /* Cater for divide by zero */
+        if (callsOffPeakTotal = 0) then peakOffPeak = 0;
+        else peakOffPeak = callsPeakTotal / callsOffPeakTotal;
+        if (callsOffPeak = 0) then peakOffPeakLast = 0;
+        else peakOffPeakLast = callsPeak / callsOffPeak;
+        roam = roamTotal / bill_counter;
+        output;
+    end;
+run;
+
 
 
 
