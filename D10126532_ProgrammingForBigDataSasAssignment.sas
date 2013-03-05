@@ -149,41 +149,6 @@ run;
 
 
 
-/*
-    Analytics Base Table
-
-1.  customer            Customer ID
-2.  children            Presence of children in customer household
-3.  credit              The customer’s credit rating
-4.  creditCard          the customer possesses a credit card
-5.  custcare            Mean number of customer care calls per month
-6.  custcareTotal       The total number of customer care calls made
-7.  custcareLast        The number of customer care calls made last month
-8.  directas            Mean number of directory assisted calls per month
-9.  directasLast        Number of director assisted calls last month
-10. dropvce             Mean number of dropped voice calls per month
-11. dropvceLast         Number of dropped voice calls last month
-12. income              The customer’s income
-13. marry               The customer’s marital status
-14. mou                 Mean monthly minutes of use
-15. mouTotal            Total minutes of use
-16. mouChange           % change in minutes of use in last two months
-17. occupation          The customer’s occupation
-18. outcalls            Mean number of outbound voice calls per month
-19. overage             Mean out of bundle minutes of use
-20. overageMax          Max out of bundle minutes of use
-21. overageMin          Min out of bundle minutes of use
-22. peakOffPeak         Ratio of peak to off-peak calls
-23. peakOffPeakLast     Ratio of peak to off-peak calls last month
-24. recchrge            Mean total recurring charge
-25. regionType          The type of region in which the customer lives
-26. revenue             Mean monthly revenue
-27. revenueTotal        The total revenue earned from this customer
-28. revenueChange       % change in revenues in last two months
-29. roam                Mean number of roaming calls per month
-30. churn               A flag indicating whether the customer has churned {true, false}
-
-*/
 proc sort data=atlib.bills;
     by ID date;
 Run;
@@ -239,7 +204,6 @@ run;
 
 proc sort data=atlib.callSummaries;
     by customer recordDate;
-
 run;
 
 data callSummaries_aggregate;
@@ -324,20 +288,87 @@ data callSummaries_aggregate;
 run;
 
 
+data bill_and_call_summaries_merged;
+    merge bills_aggregate
+          callSummaries_aggregate (rename=(customer = ID));
+    by ID;
+run;
 
 
-/*
-
-proc sort data = demographics;
+proc sort data=atlib.demographics;
     by customer;
 run;
 
 
+
+data demographics_temp;
+    set atlib.demographics (rename=(customer=ID marital=marry creditRating=credit));
+    keep
+        ID
+        children			/* Presence of children in customer household */
+        credit				/* The customer’s credit rating */
+        creditCard			/* the customer possesses a credit card */
+        income				/* The customer’s income */
+        marry				/* The customer’s marital status */
+        occupation			/* The customer’s occupation */
+        regionType			/* The type of region in which the customer lives */
+    ;
+run;
+
+
 data atlib.abt;
-    merge demographics
-          bills_agg (rename (customer = ID));
-          * bills_agg (rename (customer = ID bills_counter = counter)); 
+    merge bill_and_call_summaries_merged
+          demographics_temp;
     by ID;
 run;
 
+/* TODO:
+
+- use divide() function instead of if statments for divide by zero
+- rename ID to customer in final dataset atlib.abt
+- Investigate: in final dataset, found "t" and "f" values in the 4th 26th records amongst a true/false values 
+- Investigate: in final dataset, peakOffPeak field values do not seem correct, only 1 and zeros!?
+- Consider the logic for customers who do not have records for all 6 months?
+- Add logic to determine true or false for the churn variable in final dataset
+- Document code
+
 */
+
+/*
+    Analytics Base Table
+
+1.  customer            Customer ID
+2.  children            Presence of children in customer household
+3.  credit              The customer’s credit rating
+4.  creditCard          the customer possesses a credit card
+5.  custcare            Mean number of customer care calls per month
+6.  custcareTotal       The total number of customer care calls made
+7.  custcareLast        The number of customer care calls made last month
+8.  directas            Mean number of directory assisted calls per month
+9.  directasLast        Number of director assisted calls last month
+10. dropvce             Mean number of dropped voice calls per month
+11. dropvceLast         Number of dropped voice calls last month
+12. income              The customer’s income
+13. marry               The customer’s marital status
+14. mou                 Mean monthly minutes of use
+15. mouTotal            Total minutes of use
+16. mouChange           % change in minutes of use in last two months
+17. occupation          The customer’s occupation
+18. outcalls            Mean number of outbound voice calls per month
+19. overage             Mean out of bundle minutes of use
+20. overageMax          Max out of bundle minutes of use
+21. overageMin          Min out of bundle minutes of use
+22. peakOffPeak         Ratio of peak to off-peak calls
+23. peakOffPeakLast     Ratio of peak to off-peak calls last month
+24. recchrge            Mean total recurring charge
+25. regionType          The type of region in which the customer lives
+26. revenue             Mean monthly revenue
+27. revenueTotal        The total revenue earned from this customer
+28. revenueChange       % change in revenues in last two months
+29. roam                Mean number of roaming calls per month
+30. churn               A flag indicating whether the customer has churned {true, false}
+
+*/
+
+
+
