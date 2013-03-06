@@ -289,9 +289,9 @@ run;
 
 
 data bill_and_call_summaries_merged;
-    merge bills_aggregate
-          callSummaries_aggregate (rename=(customer = ID));
-    by ID;
+    merge bills_aggregate (rename=(ID=customer))
+          callSummaries_aggregate;
+    by customer;
 run;
 
 
@@ -301,26 +301,82 @@ run;
 
 
 
-data demographics_temp;
-    set atlib.demographics (rename=(customer=ID marital=marry creditRating=credit));
+data demographics_chop_for_abt;
+    set atlib.demographics (rename=(marital=marry creditRating=credit));
     keep
-        ID
-        children			/* Presence of children in customer household */
-        credit				/* The customer’s credit rating */
-        creditCard			/* the customer possesses a credit card */
-        income				/* The customer’s income */
-        marry				/* The customer’s marital status */
-        occupation			/* The customer’s occupation */
-        regionType			/* The type of region in which the customer lives */
+        customer            /* Customer ID */
+        children            /* Presence of children in customer household */
+        credit              /* The customer’s credit rating */
+        creditCard          /* the customer possesses a credit card */
+        income              /* The customer’s income */
+        marry               /* The customer’s marital status */
+        occupation          /* The customer’s occupation */
+        regionType          /* The type of region in which the customer lives */
     ;
 run;
 
 
-data atlib.abt;
+data abt_before_churn;
     merge bill_and_call_summaries_merged
-          demographics_temp;
-    by ID;
+          demographics_chop_for_abt;
+    by customer;
 run;
+
+data atlib.abt;
+    set abt_before_churn;
+    /* 
+        Attempting to put the fields in the order to match specification,
+        however the order of the keep statement is not followed
+    */
+    keep
+        customer            /* Customer ID */
+        children            /* Presence of children in customer household */
+        credit              /* The customer’s credit rating */
+        creditCard          /* the customer possesses a credit card */
+        custcare            /* Mean number of customer care calls per month */
+        custcareTotal       /* The total number of customer care calls made */
+        custcareLast        /* The number of customer care calls made last month */
+        directas            /* Mean number of directory assisted calls per month */
+        directasLast        /* Number of director assisted calls last month */
+        dropvce             /* Mean number of dropped voice calls per month */
+        dropvceLast         /* Number of dropped voice calls last month */
+        income              /* The customer’s income */
+        marry               /* The customer’s marital status */
+        mou                 /* Mean monthly minutes of use */
+        mouTotal            /* Total minutes of use */
+        mouChange           /* % change in minutes of use in last two months */
+        occupation          /* The customer’s occupation */
+        outcalls            /* Mean number of outbound voice calls per month */
+        overage             /* Mean out of bundle minutes of use */
+        overageMax          /* Max out of bundle minutes of use */
+        overageMin          /* Min out of bundle minutes of use */
+        peakOffPeak         /* Ratio of peak to off-peak calls */
+        peakOffPeakLast     /* Ratio of peak to off-peak calls last month */
+        recchrge            /* Mean total recurring charge */
+        regionType          /* The type of region in which the customer lives */
+        revenue             /* Mean monthly revenue */
+        revenueTotal        /* The total revenue earned from this customer */
+        revenueChange       /* % change in revenues in last two months */
+        roam                /* Mean number of roaming calls per month */
+        churn               /* A flag indicating whether the customer has churned {true, false} */
+    ;
+    /* Assume customer is not churned initially */
+    churn = "false";
+    /* Algoritm for determining if the customer had churned. */
+    /* Adjust as appropiate */
+    if (mouChange < 0 AND custcare < 2.0) then churn = "true";
+run;
+
+
+proc print data=atlib.abt;
+run;
+
+proc export data=atlib.abt
+     outfile="U:\ProgrammingForBigData\SasAssignment\sasassignment\abt.csv"
+     dbms=csv
+     replace;
+run;
+
 
 /* TODO:
 
@@ -329,7 +385,8 @@ run;
 - Investigate: in final dataset, found "t" and "f" values in the 4th 26th records amongst a true/false values 
 - Investigate: in final dataset, peakOffPeak field values do not seem correct, only 1 and zeros!?
 - Consider the logic for customers who do not have records for all 6 months?
-- Add logic to determine true or false for the churn variable in final dataset
+- Create a presentable report?
+- Export out to a CSV?
 - Document code
 
 */
