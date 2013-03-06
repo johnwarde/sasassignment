@@ -32,12 +32,6 @@ data atlib.bills;
 run;
 
 
-proc print data=atlib.bills;
-run;
-
-
-
-
 /* 
    Import Customer Call Records data 
 
@@ -60,11 +54,6 @@ data atlib.calls;
     ;
     format callDate e8601dt.;
 run;
-
-
-proc print data=atlib.calls;
-run;
-
 
 
 /*
@@ -93,10 +82,6 @@ data atlib.callSummaries;
         totalMinutes       /* Numeric  The total number of minutes used in this period */
     ;
     format recordDate MMYYD8.;
-run;
-
-
-proc print data=atlib.callSummaries;
 run;
 
 /*
@@ -144,14 +129,9 @@ data atlib.demographics;
 run;
 
 
-proc print data=atlib.demographics;
-run;
-
-
-
 proc sort data=atlib.bills;
     by ID date;
-Run;
+run;
 
 data bills_aggregate;
     set atlib.bills;
