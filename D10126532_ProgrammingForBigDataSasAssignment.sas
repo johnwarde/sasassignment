@@ -10,6 +10,14 @@
 */
 LIBNAME atlib "C:\SASData\johnwarde\SASAssignment";
 
+/*
+	From: http://marc.info/?l=sas-l&m=116624822680111&w=2
+*/
+proc format library=atlib;
+  picture mony4d /* FEB-2003 */ low-high='%b-%Y' (datatype=date);
+run;
+
+
 /* 
     Import Customer Billing Records data
 */
@@ -25,7 +33,8 @@ data atlib.bills replace (compress=yes);
         minutes          /* Numeric  The number of minutes used this month */
         overageMins      /* Numeric  The number of minutes over the customer's bundle used this month */
     ;
-    format date MMYYD8.;
+    *format date MMYYD8.;
+    format date mony4d.;
 run;
 
 
@@ -91,7 +100,7 @@ run;
 /*
     Import Customer Demographics
 */
-data atlib.demographics (compress=yes);
+data atlib.demographics replace (compress=yes);
     infile 'U:\ProgrammingForBigData\SasAssignment\demographics.csv' dlm=',' dsd firstobs=2;
     length occupation $ 14;
     length serviceArea $ 14;
@@ -144,15 +153,14 @@ data atlib.demographics (compress=yes);
     if mailFlag = 'f' 		then mailFlag = 'false';
     if travel = 't' 		then travel = 'true';
     if travel = 'f' 		then travel = 'false';
-	if creditCard = 't' then creditCard = 'true';
-	if creditCard = 'f' then creditCard = 'false';
+	if creditCard = 't' 	then creditCard = 'true';
+	if creditCard = 'f' 	then creditCard = 'false';
 run;
 
 /*
     Print Demographics Data
 */
 proc print data=atlib.demographics;
-	where creditCard='t';
 run;
 
 /*
@@ -162,6 +170,10 @@ proc sort data=atlib.bills;
     by ID date;
 run;
 
+
+/*
+	Aggregregate data in the bills dataset
+*/
 data bills_aggregate;
     set atlib.bills;
     by ID;
@@ -201,20 +213,26 @@ data bills_aggregate;
     revenueTotal = sum(revenueTotal, totalBill);
     if last.ID then
     do;
-        overage = out_of_bundle_minutes_total / bill_counter;
-        recchrge = recurring_charge_total / bill_counter;
-        revenue = revenueTotal / bill_counter;
+	    overage = divide(out_of_bundle_minutes_total, bill_counter);
+        recchrge = divide(recurring_charge_total, bill_counter);
+        revenue = divide(revenueTotal, bill_counter);
         last_bill_total = lag1(totalBill);
-        if (last_bill_total = . | last_bill_total = 0) then revenueChange = 0;
-        else revenueChange = dif1(totalBill) / last_bill_total; 
+		revenueChange = divide(dif1(totalBill), last_bill_total); 
         output;
     end;
 run;
 
-proc sort data=atlib.callSummaries;
+/*
+    Sort Demographics Data by ID then by date
+*/
+proc sort data=atlib.callSummaries tagsort;
     by customer recordDate;
 run;
 
+
+/*
+	Aggregregate data in the callSummaries dataset
+*/
 data callSummaries_aggregate;
     set atlib.callSummaries;
     by customer;
@@ -272,31 +290,33 @@ data callSummaries_aggregate;
 
     if last.customer then
     do;
-        custcare = custcareTotal / bill_counter;
+        custcare = divide(custcareTotal, bill_counter);
         custcareLast = custcareTotal;
-        directas = directasTotal / bill_counter;
+        directas = divide(directasTotal, bill_counter);
         directasLast = callsDirectAssist;
-        dropvce = dropvceTotal / bill_counter;
+        dropvce = divide(dropvceTotal, bill_counter);
         dropvceLast = callsDropped;
-        mou = mouTotal / bill_counter;
+        mou = divide(mouTotal, bill_counter);
         previous_total_minutes = lag1(totalMinutes);
-        if (previous_total_minutes = . | previous_total_minutes = 0) then mouChange = 0;
-        else mouChange = dif1(totalMinutes) / previous_total_minutes; 
-        outcalls = outcallsTotal / bill_counter;
-        /* TODO: cater for division by zero in all cases where 
-                 dividing by a value from a dataset, i.e. when
-                 not dividing by a counter */
-        /* Cater for divide by zero */
-        if (callsOffPeakTotal = 0) then peakOffPeak = 0;
-        else peakOffPeak = callsPeakTotal / callsOffPeakTotal;
-        if (callsOffPeak = 0) then peakOffPeakLast = 0;
-        else peakOffPeakLast = callsPeak / callsOffPeak;
-        roam = roamTotal / bill_counter;
+        mouChange = divide(dif1(totalMinutes), previous_total_minutes);
+		outcalls = divide(outcallsTotal, bill_counter);
+        peakOffPeak = divide(callsPeakTotal, callsOffPeakTotal);
+        peakOffPeakLast = divide(callsPeak, callsOffPeak);
+		roam = divide(roamTotal, bill_counter);
         output;
     end;
 run;
 
+/*
+	Print Call Summaries aggregrate
+*/
+proc print data=callSummaries_aggregate;
+run;
 
+
+/*
+	Merge Bills aggregrate date with Call Summaries aggregrate data on Customer (ID) 
+*/
 data bill_and_call_summaries_merged;
     merge bills_aggregate (rename=(ID=customer))
           callSummaries_aggregate;
@@ -304,13 +324,18 @@ data bill_and_call_summaries_merged;
 run;
 
 
-proc sort data=atlib.demographics;
+/*
+	Sort Demographics data
+*/
+proc sort data=atlib.demographics tagsort;
     by customer;
 run;
 
 
-
-data demographics_chop_for_abt;
+/*
+	Create a dataset with only the columns we need from the Demographics data
+*/
+data demographics_chop_for_abt replace (compress=yes);
     set atlib.demographics (rename=(marital=marry creditRating=credit));
     keep
         customer            /* Customer ID */
@@ -325,16 +350,23 @@ data demographics_chop_for_abt;
 run;
 
 
+/*
+	Merge the above dataset with the aggregrate data on Customer (ID)
+*/
 data abt_before_churn;
     merge bill_and_call_summaries_merged
           demographics_chop_for_abt;
     by customer;
 run;
 
+
+/*
+	Assemble the final dataset
+*/
 data atlib.abt;
     set abt_before_churn;
     /* 
-        Attempting to put the fields in the order to match specification,
+        TODO: Attempting to put the fields in the order to match specification,
         however the order of the keep statement is not followed
     */
     keep
@@ -377,9 +409,15 @@ data atlib.abt;
 run;
 
 
+/*
+	Print the ABT dataset
+*/
 proc print data=atlib.abt;
 run;
 
+/*
+	Export the deliverable abt.csv
+*/
 proc export data=atlib.abt
      outfile="U:\ProgrammingForBigData\SasAssignment\sasassignment\abt.csv"
      dbms=csv
@@ -389,14 +427,14 @@ run;
 
 /* TODO:
 
-- use divide() function instead of if statments for divide by zero
+- DONE: use divide() function instead of if statments for divide by zero
 - DONE: rename ID to customer in final dataset atlib.abt
-- Investigate: in final dataset, found "t" and "f" values in the 4th 26th records amongst a true/false values 
+- DONE: Investigate: in final dataset, found "t" and "f" values in the 4th 26th records amongst a true/false values 
 - Investigate: in final dataset, peakOffPeak field values do not seem correct, only 1 and zeros!?
 - Attempt to get Jan-2011 output format for import of bills.csv
 - Consider the logic for customers who do not have records for all 6 months?
 - Create a presentable report?
-- Export out to a CSV?
+- DONE: Export out to a CSV?
 - Document code
 - Fix import of calls.csv: getting this error:
 NOTE: Invalid data for length in line 82939 27-30.
