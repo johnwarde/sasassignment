@@ -21,7 +21,7 @@ run;
 /* 
     Import Customer Billing Records data
 */
-data atlib.bills replace (compress=yes);
+data atlib.bills (replace=yes compress=yes);
     infile 'U:\ProgrammingForBigData\SasAssignment\bills.csv' dlm=',' dsd firstobs=2;
     informat date MONYY7.;
     input 
@@ -33,8 +33,8 @@ data atlib.bills replace (compress=yes);
         minutes          /* Numeric  The number of minutes used this month */
         overageMins      /* Numeric  The number of minutes over the customer's bundle used this month */
     ;
-    *format date MMYYD8.;
-    format date mony4d.;
+    format date MMYYD8.;
+    *format date mony4d.;
 run;
 
 
@@ -44,7 +44,7 @@ run;
 /* 
    Import Customer Call Records data 
 */
-data atlib.calls replace (compress=yes);
+data atlib.calls (replace=yes compress=yes);
     infile 'U:\ProgrammingForBigData\SasAssignment\calls.csv' dlm=',' dsd firstobs=2;
     informat callDate datetime. length 10.20;
     input 
@@ -70,7 +70,7 @@ run;
 /*
     Import Call Summaries Data
 */
-data atlib.callSummaries replace (compress=yes);
+data atlib.callSummaries (replace=yes compress=yes);
     infile 'U:\ProgrammingForBigData\SasAssignment\callSummaries.csv' dlm=',' dsd firstobs=2;
     informat recordDate MONYY7.;
     input 
@@ -100,7 +100,7 @@ run;
 /*
     Import Customer Demographics
 */
-data atlib.demographics replace (compress=yes);
+data atlib.demographics (replace=yes compress=yes);
     infile 'U:\ProgrammingForBigData\SasAssignment\demographics.csv' dlm=',' dsd firstobs=2;
     length occupation $ 14;
     length serviceArea $ 14;
@@ -166,7 +166,7 @@ run;
 /*
     Sort Demographics Data by ID then by date
 */
-proc sort data=atlib.bills;
+proc sort data=atlib.bills tagsort;
     by ID date;
 run;
 
@@ -361,7 +361,7 @@ run;
 
 
 /*
-	Assemble the final dataset
+	Assemble the final "Analytics Base Table" dataset
 */
 data atlib.abt;
     set abt_before_churn;
@@ -425,17 +425,20 @@ proc export data=atlib.abt
 run;
 
 
-/* TODO:
+/* 
 
+TODO:
 - DONE: use divide() function instead of if statments for divide by zero
 - DONE: rename ID to customer in final dataset atlib.abt
 - DONE: Investigate: in final dataset, found "t" and "f" values in the 4th 26th records amongst a true/false values 
-- Investigate: in final dataset, peakOffPeak field values do not seem correct, only 1 and zeros!?
-- Attempt to get Jan-2011 output format for import of bills.csv
+- DONE: Export out to a CSV?
+- Investigate: in final dataset, peakOffPeak feld values do not seem correct, only 1 and zeros!?
+- Frequency reports for categorical variables
+- Reports showing min, max and mean number of missing values for all numeric variables.
 - Consider the logic for customers who do not have records for all 6 months?
 - Create a presentable report?
-- DONE: Export out to a CSV?
 - Document code
+- Attempt to get Jan-2011 output format for import of bills.csv
 - Fix import of calls.csv: getting this error:
 NOTE: Invalid data for length in line 82939 27-30.
 RULE:     ----+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9--
@@ -443,44 +446,4 @@ RULE:     ----+----1----+----2----+----3----+----4----+----5----+----6----+----7
 callDate=2011-01-29T03:20:42 length=. customerID=1001276 number=44632491291 outcome=complete
 roaming=false directorAssisted=false peakOrOffPeak=true _ERROR_=1 _N_=82938
 
-
 */
-
-/*
-    Analytics Base Table
-
-1.  customer            Customer ID
-2.  children            Presence of children in customer household
-3.  credit              The customer’s credit rating
-4.  creditCard          the customer possesses a credit card
-5.  custcare            Mean number of customer care calls per month
-6.  custcareTotal       The total number of customer care calls made
-7.  custcareLast        The number of customer care calls made last month
-8.  directas            Mean number of directory assisted calls per month
-9.  directasLast        Number of director assisted calls last month
-10. dropvce             Mean number of dropped voice calls per month
-11. dropvceLast         Number of dropped voice calls last month
-12. income              The customer’s income
-13. marry               The customer’s marital status
-14. mou                 Mean monthly minutes of use
-15. mouTotal            Total minutes of use
-16. mouChange           % change in minutes of use in last two months
-17. occupation          The customer’s occupation
-18. outcalls            Mean number of outbound voice calls per month
-19. overage             Mean out of bundle minutes of use
-20. overageMax          Max out of bundle minutes of use
-21. overageMin          Min out of bundle minutes of use
-22. peakOffPeak         Ratio of peak to off-peak calls
-23. peakOffPeakLast     Ratio of peak to off-peak calls last month
-24. recchrge            Mean total recurring charge
-25. regionType          The type of region in which the customer lives
-26. revenue             Mean monthly revenue
-27. revenueTotal        The total revenue earned from this customer
-28. revenueChange       % change in revenues in last two months
-29. roam                Mean number of roaming calls per month
-30. churn               A flag indicating whether the customer has churned {true, false}
-
-*/
-
-
-
