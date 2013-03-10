@@ -5,17 +5,15 @@
  *
  */
 
-/* Define library location */
+/* 
+	Define library location 
+*/
 LIBNAME atlib "C:\SASData\johnwarde\SASAssignment";
 
 /* 
-    Import Customer Billing Records data 
-
-    Sample Data
-1000004, Jan-2011, 38.00, 0.00, 38.00, 7.3825136479466, 0.0
-
+    Import Customer Billing Records data
 */
-data atlib.bills;
+data atlib.bills replace (compress=yes);
     infile 'U:\ProgrammingForBigData\SasAssignment\bills.csv' dlm=',' dsd firstobs=2;
     informat date MONYY7.;
     input 
@@ -27,21 +25,19 @@ data atlib.bills;
         minutes          /* Numeric  The number of minutes used this month */
         overageMins      /* Numeric  The number of minutes over the customer's bundle used this month */
     ;
-    * TODO: attempt to get Jan-2011 output format for below;
     format date MMYYD8.;
 run;
 
 
+proc print data=atlib.bills;
+run;
+
 /* 
    Import Customer Call Records data 
-
-   Sample Data
-1000004, 25Jan11:00:41:12, 1.281945212974323, 0884469412, complete, false, false, true
-
 */
-data atlib.calls;
+data atlib.calls replace (compress=yes);
     infile 'U:\ProgrammingForBigData\SasAssignment\calls.csv' dlm=',' dsd firstobs=2;
-    informat callDate datetime.;
+    informat callDate datetime. length 10.20;
     input 
         customerID          /* Numeric  customerID */
         callDate $          /* Numeric  The date and time of the call */
@@ -55,16 +51,17 @@ data atlib.calls;
     format callDate e8601dt.;
 run;
 
+/* 
+   Print Customer Call Records data 
+*/
+proc print data=atlib.calls;
+run;
+
 
 /*
-
     Import Call Summaries Data
-
-    Sample Data
-1000004, Jan-2011, 0, 0, 0, 0, 0, 0, 1, 4, 5, 7.3825136479466
-
 */
-data atlib.callSummaries;
+data atlib.callSummaries replace (compress=yes);
     infile 'U:\ProgrammingForBigData\SasAssignment\callSummaries.csv' dlm=',' dsd firstobs=2;
     informat recordDate MONYY7.;
     input 
@@ -85,14 +82,16 @@ data atlib.callSummaries;
 run;
 
 /*
-    Import Customer Demographics
-
-Sample Data
-1000004, 26, crafts, MILMIL414, town, yes, true, 6.0, 60, 1, 1, 1812, false, 0.0, b, 0, 
-false, false, false, false, true, false, false, false, false, true, yes, 0
-
+    Print Call Summaries Data
 */
-data atlib.demographics;
+proc print data=atlib.callSummaries;
+run;
+
+
+/*
+    Import Customer Demographics
+*/
+data atlib.demographics (compress=yes);
     infile 'U:\ProgrammingForBigData\SasAssignment\demographics.csv' dlm=',' dsd firstobs=2;
     length occupation $ 14;
     length serviceArea $ 14;
@@ -126,9 +125,39 @@ data atlib.demographics;
         newCellUser $       /* Categorical  The customer is a known new cell phone user {yes, no, unknown} */
         numReferrals        /* Numeric      The number of referrals made by the customer */
     ;
+	/* Correct some of the data values for consistency */
+    if truck = 't' 			then truck = 'true';
+    if truck = 'f' 			then truck = 'false';
+    if rv = 't' 			then rv = 'true';
+    if rv = 'f' 			then rv = 'false';
+    if motorcycle = 't' 	then motorcycle = 'true';
+    if motorcycle = 'f' 	then motorcycle = 'false';
+    if pc = 't' 			then pc = 'true';
+    if pc = 'f' 			then pc = 'false';
+    if ownHome = 't' 		then ownHome = 'true';
+    if ownHome = 'f' 		then ownHome = 'false';
+    if mailOrder = 't' 		then mailOrder = 'true';
+    if mailOrder = 'f' 		then mailOrder = 'false';
+    if mailResponder = 't' 	then mailResponder = 'true';
+    if mailResponder = 'f' 	then mailResponder = 'false';
+    if mailFlag = 't' 		then mailFlag = 'true';
+    if mailFlag = 'f' 		then mailFlag = 'false';
+    if travel = 't' 		then travel = 'true';
+    if travel = 'f' 		then travel = 'false';
+	if creditCard = 't' then creditCard = 'true';
+	if creditCard = 'f' then creditCard = 'false';
 run;
 
+/*
+    Print Demographics Data
+*/
+proc print data=atlib.demographics;
+	where creditCard='t';
+run;
 
+/*
+    Sort Demographics Data by ID then by date
+*/
 proc sort data=atlib.bills;
     by ID date;
 run;
@@ -361,13 +390,21 @@ run;
 /* TODO:
 
 - use divide() function instead of if statments for divide by zero
-- rename ID to customer in final dataset atlib.abt
+- DONE: rename ID to customer in final dataset atlib.abt
 - Investigate: in final dataset, found "t" and "f" values in the 4th 26th records amongst a true/false values 
 - Investigate: in final dataset, peakOffPeak field values do not seem correct, only 1 and zeros!?
+- Attempt to get Jan-2011 output format for import of bills.csv
 - Consider the logic for customers who do not have records for all 6 months?
 - Create a presentable report?
 - Export out to a CSV?
 - Document code
+- Fix import of calls.csv: getting this error:
+NOTE: Invalid data for length in line 82939 27-30.
+RULE:     ----+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9--
+82939     1001276, 29Jan11:03:20:42, NaN, 0044632491291, complete, false, false, true 75
+callDate=2011-01-29T03:20:42 length=. customerID=1001276 number=44632491291 outcome=complete
+roaming=false directorAssisted=false peakOrOffPeak=true _ERROR_=1 _N_=82938
+
 
 */
 
