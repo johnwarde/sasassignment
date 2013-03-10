@@ -39,6 +39,7 @@ run;
 
 
 proc print data=atlib.bills;
+	title "Bills raw data";
 run;
 
 /* 
@@ -64,6 +65,7 @@ run;
    Print Customer Call Records data 
 */
 proc print data=atlib.calls;
+	title "Calls raw data";
 run;
 
 
@@ -94,6 +96,7 @@ run;
     Print Call Summaries Data
 */
 proc print data=atlib.callSummaries;
+	title "Call Summaries raw data";
 run;
 
 
@@ -134,7 +137,9 @@ data atlib.demographics (replace=yes compress=yes);
         newCellUser $       /* Categorical  The customer is a known new cell phone user {yes, no, unknown} */
         numReferrals        /* Numeric      The number of referrals made by the customer */
     ;
-	/* Correct some of the data values for consistency */
+	/* Correct some of the incoming data values for consistency */
+	if serviceArea = "0" 	then serviceArea = ' ';
+
     if truck = 't' 			then truck = 'true';
     if truck = 'f' 			then truck = 'false';
     if rv = 't' 			then rv = 'true';
@@ -155,12 +160,20 @@ data atlib.demographics (replace=yes compress=yes);
     if travel = 'f' 		then travel = 'false';
 	if creditCard = 't' 	then creditCard = 'true';
 	if creditCard = 'f' 	then creditCard = 'false';
+	if creditCard = 'yes' 	then creditCard = 'true';
+	if creditCard = 'no' 	then creditCard = 'false';
+
+	if regionType = 'r' 		then regionType = 'rural';
+	if regionType = 's' 		then regionType = 'suburban';
+	if regionType = 't' 		then regionType = 'town';
+	if regionType = 'unknown' 	then regionType=' ';
 run;
 
 /*
     Print Demographics Data
 */
 proc print data=atlib.demographics;
+	title "Demographics raw data";
 run;
 
 /*
@@ -311,6 +324,7 @@ run;
 	Print Call Summaries aggregrate
 */
 proc print data=callSummaries_aggregate;
+	title "Call Summaries Aggregrate data";
 run;
 
 
@@ -413,7 +427,9 @@ run;
 	Print the ABT dataset
 */
 proc print data=atlib.abt;
+	title "Analytics Base Table data";
 run;
+
 
 /*
 	Export the deliverable abt.csv
@@ -425,6 +441,44 @@ proc export data=atlib.abt
 run;
 
 
+/*
+	Isolate fields in the demographics data for frequency reports. 
+*/
+data demographics_for_freq_reports;
+    set atlib.demographics;
+	keep
+		occupation          /* Categorical  The occupation of the customer {clerical, crafts, homemaker, professional, retired, self-­-employed, student} */
+		serviceArea         /* Categorical  The cell-­-phone service area in which the customer lives */
+		regionType          /* Categorical  The type of region in which the customer lives {rural, suburban, town} */
+		marital             /* Categorical  The customer's marital status {yes, no, unknown} */
+		children            /* Categorical  There are children present in the customer's household {true, false} */
+		WebCapable          /* Categorical  The customer's handset is web capable {true, false} */
+		creditRating        /* Categorical  The customers credit rating {a, aa, b, c, de, gy, z} */
+		truck               /* Categorical  The customer owns a truck */
+		rv                  /* Categorical  The customer owns a recreational vehicle {true, false} */
+		motorcycle          /* Categorical  The customer owns a motorcycle {true, false} */
+		pc                  /* Categorical  The customer owns a personal computer {true, false} */
+		ownHome             /* Categorical  The customer owns their own home {true, false} */
+		mailOrder           /* Categorical  The customer buys via mail order {true, false} */
+		mailResponder       /* Categorical  The customer responds to mail offers {true, false} */
+		mailFlag            /* Categorical  The customer has chosen not to be solicited by mail {true, false} */
+		travel              /* Categorical  The customer has travelled internationally {true, false} */
+		creditCard          /* Categorical  The customer owns a credit card {true, false} */
+		newCellUser         /* Categorical  The customer is a known new cell phone user {yes, no, unknown} */
+	;
+run;
+
+/*
+	Generate frequecy reports
+*/
+*ODS pdf;
+proc freq data=demographics_for_freq_reports;
+    table _ALL_ / nocum missing;
+	title "Frequency Report for Categorical Demographic data";
+run;
+*ODS pdf close;
+
+
 /* 
 
 TODO:
@@ -432,11 +486,11 @@ TODO:
 - DONE: rename ID to customer in final dataset atlib.abt
 - DONE: Investigate: in final dataset, found "t" and "f" values in the 4th 26th records amongst a true/false values 
 - DONE: Export out to a CSV?
+- DONE: Frequency reports for categorical variables
 - Investigate: in final dataset, peakOffPeak feld values do not seem correct, only 1 and zeros!?
-- Frequency reports for categorical variables
 - Reports showing min, max and mean number of missing values for all numeric variables.
 - Consider the logic for customers who do not have records for all 6 months?
-- Create a presentable report?
+- Create a graphical report?
 - Document code
 - Attempt to get Jan-2011 output format for import of bills.csv
 - Fix import of calls.csv: getting this error:
