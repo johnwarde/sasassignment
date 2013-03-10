@@ -471,12 +471,12 @@ run;
 /*
 	Generate frequecy reports
 */
-*ODS pdf;
+ODS pdf;
 proc freq data=demographics_for_freq_reports;
     table _ALL_ / nocum missing;
 	title "Frequency Report for Categorical Demographic data";
 run;
-*ODS pdf close;
+ODS pdf close;
 
 
 /* 
