@@ -10,13 +10,6 @@
 */
 LIBNAME atlib "C:\SASData\johnwarde\SASAssignment";
 
-/*
-	From: http://marc.info/?l=sas-l&m=116624822680111&w=2
-*/
-proc format library=atlib;
-  picture mony4d /* FEB-2003 */ low-high='%b-%Y' (datatype=date);
-run;
-
 
 /* 
     Import Customer Billing Records data
@@ -34,38 +27,11 @@ data atlib.bills (replace=yes compress=yes);
         overageMins      /* Numeric  The number of minutes over the customer's bundle used this month */
     ;
     format date MMYYD8.;
-    *format date mony4d.;
 run;
 
 
 proc print data=atlib.bills;
 	title "Bills raw data";
-run;
-
-/* 
-   Import Customer Call Records data 
-*/
-data atlib.calls (replace=yes compress=yes);
-    infile 'U:\ProgrammingForBigData\SasAssignment\calls.csv' dlm=',' dsd firstobs=2;
-    informat callDate datetime. length 10.20;
-    input 
-        customerID          /* Numeric  customerID */
-        callDate $          /* Numeric  The date and time of the call */
-        length              /* Numeric  The length of the call in minutes */
-        number              /* Numeric  The number called */
-        outcome $           /* Numeric  The outcome of the call {blocked, unanswered, complete, dropped} */
-        roaming $           /* Numeric  Was this call a roaming {true, false} */
-        directorAssisted $  /* Numeric  Was this a directory assisted call {true, false} */
-        peakOrOffPeak $     /* Numeric  Was this call on peak {true, false} */
-    ;
-    format callDate e8601dt.;
-run;
-
-/* 
-   Print Customer Call Records data 
-*/
-proc print data=atlib.calls;
-	title "Calls raw data";
 run;
 
 
@@ -297,7 +263,7 @@ data callSummaries_aggregate;
     dropvceTotal = sum(dropvceTotal, callsDropped);
     mouTotal = sum(mouTotal, totalMinutes);
     callsOffPeakTotal = sum(callsOffPeakTotal, callsOffPeak);
-    callsPeakTotal = sum(callsPeakTotal, callsOffPeak);
+    callsPeakTotal = sum(callsPeakTotal, callsPeak);
     outcallsTotal = sum(outcallsTotal, callsTotal);
     roamTotal = sum(roamTotal, callsRoam);
 
@@ -379,10 +345,6 @@ run;
 */
 data atlib.abt;
     set abt_before_churn;
-    /* 
-        TODO: Attempting to put the fields in the order to match specification,
-        however the order of the keep statement is not followed
-    */
     keep
         customer            /* Customer ID */
         children            /* Presence of children in customer household */
@@ -515,7 +477,9 @@ data chop_demographics_for_stats;
 run;
 
 
-ODS pdf;
+
+/* Generate PDF report START */
+ODS pdf file="U:\ProgrammingForBigData\SasAssignment\sasassignment\FrequencyReportForCategoricalDataInDemographics.pdf";
 
 /*
 	Generate frequecy reports
@@ -525,42 +489,21 @@ proc freq data=demographics_for_freq_reports;
 	title "Frequency Report for Categorical Demographic data";
 run;
 
-
 /*
 	Generate statistical reports for numerical data
 */
 proc means data=chop_bills_summaries_for_stats min max mean missing;
-	title "Statistics for Numerical Data Part 1";
+	title "Statistical Report for Numerical Bill and Call Summaries Data";
 run;
 
 /*
 	Generate statistical reports for numerical data
 */
 proc means data=chop_demographics_for_stats min max mean missing;
-	title "Statistics for Numerical Data Part 2";
+	title "Statistical Report for Numerical Demographic Data";
 run;
 
+
+/* Generate PDF report end */
 ODS pdf close;
 
-
-/* 
-
-TODO:
-- DONE: use divide() function instead of if statments for divide by zero
-- DONE: rename ID to customer in final dataset atlib.abt
-- DONE: Investigate: in final dataset, found "t" and "f" values in the 4th 26th records amongst a true/false values 
-- DONE: Export out to a CSV?
-- DONE: Frequency reports for categorical variables
-- DONE: Reports showing min, max and mean number of missing values for all numeric variables.
-- Investigate: in final dataset, peakOffPeak feld values do not seem correct, only 1 and zeros!?
-- Consider the logic for customers who do not have records for all 6 months?
-- Document code
-- Attempt to get Jan-2011 output format for import of bills.csv
-- Fix import of calls.csv: getting this error:
-NOTE: Invalid data for length in line 82939 27-30.
-RULE:     ----+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9--
-82939     1001276, 29Jan11:03:20:42, NaN, 0044632491291, complete, false, false, true 75
-callDate=2011-01-29T03:20:42 length=. customerID=1001276 number=44632491291 outcome=complete
-roaming=false directorAssisted=false peakOrOffPeak=true _ERROR_=1 _N_=82938
-
-*/
