@@ -468,14 +468,78 @@ data demographics_for_freq_reports;
 	;
 run;
 
+
+
+/*
+	Isolate fields in the bills and callSummaries data for statistical reports. 
+*/
+data chop_bills_summaries_for_stats;
+	merge atlib.bills (rename=(ID=customer))
+          atlib.callSummaries;
+	by customer;
+	keep
+		recurringCharge    /* Numeric  The recurring bundle charge this month */
+		callCharges        /* Numeric  The call charges for this month */
+		totalBill          /* Numeric  The total bill amount for this month */
+		minutes            /* Numeric  The number of minutes used this month */
+		overageMins        /* Numeric  The number of minutes over the customer's bundle used this month */
+		callsDropped       /* Numeric  The number of calls dropped in this period */
+		callsBlocked       /* Numeric  The number of blocked calls in the billing period */
+		callsUnanswered    /* Numeric  The number of unanswered calls made in this period */
+		callsCustCare      /* Numeric  The number of calls made to customer care in this period */
+		callsDirectAssist  /* Numeric  The number of directory assisted calls made in this period */
+		callsRoam          /* Numeric  The number of roaming calls made in this period */
+		callsPeak          /* Numeric  The total number of peak calls made in this period */
+		callsOffPeak       /* Numeric  The total number of off peak calls made in this period */
+		callsTotal         /* Numeric  The total number of calls made in this period */
+		totalMinutes       /* Numeric  The total number of minutes used in this period */
+	;
+run;
+
+/*
+	Isolate fields in the demographics data for statistical reports. 
+*/
+data chop_demographics_for_stats;
+	set atlib.demographics;
+	keep
+        age                 /* Numeric The customer's age */
+        income              /* Numeric The customer's income {0 -­- 9} */
+        months              /* Numeric The number of months the customer has been in service */
+        numPhones           /* Numeric The number of phones the customer has owned */
+        numModels           /* Numeric The number of different phone models the customer has owned */
+        currentEquipDays    /* Numeric The number of days that the customer has owned their current handset */
+        handsetPrice        /* Numeric The price paid for the customer's handset */
+        creditAdjust        /* Numeric The number of times the customer's credit rating has been adjusted (either up or down) since they became a customer */
+        numReferrals        /* Numeric The number of referrals made by the customer */
+	;
+run;
+
+
+ODS pdf;
+
 /*
 	Generate frequecy reports
 */
-ODS pdf;
 proc freq data=demographics_for_freq_reports;
     table _ALL_ / nocum missing;
 	title "Frequency Report for Categorical Demographic data";
 run;
+
+
+/*
+	Generate statistical reports for numerical data
+*/
+proc means data=chop_bills_summaries_for_stats min max mean missing;
+	title "Statistics for Numerical Data Part 1";
+run;
+
+/*
+	Generate statistical reports for numerical data
+*/
+proc means data=chop_demographics_for_stats min max mean missing;
+	title "Statistics for Numerical Data Part 2";
+run;
+
 ODS pdf close;
 
 
@@ -487,10 +551,9 @@ TODO:
 - DONE: Investigate: in final dataset, found "t" and "f" values in the 4th 26th records amongst a true/false values 
 - DONE: Export out to a CSV?
 - DONE: Frequency reports for categorical variables
+- DONE: Reports showing min, max and mean number of missing values for all numeric variables.
 - Investigate: in final dataset, peakOffPeak feld values do not seem correct, only 1 and zeros!?
-- Reports showing min, max and mean number of missing values for all numeric variables.
 - Consider the logic for customers who do not have records for all 6 months?
-- Create a graphical report?
 - Document code
 - Attempt to get Jan-2011 output format for import of bills.csv
 - Fix import of calls.csv: getting this error:
